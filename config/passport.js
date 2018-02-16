@@ -21,7 +21,11 @@ module.exports = function(passport) {
 
         clientID        : configAuth.googleAuth.clientID,
         clientSecret    : configAuth.googleAuth.clientSecret,
-        callbackURL     : configAuth.googleAuth.callbackURL
+        callbackURL     : configAuth.googleAuth.callbackURL,
+        scope: ['https://www.googleapis.com/auth/calendar.readonly'],
+        accessType: 'offline',
+        prompt: 'consent',
+        approvalPrompt: 'force'
 
     },
 
@@ -35,14 +39,20 @@ module.exports = function(passport) {
 
                 if (user) {
                     user.access_token = accessToken;
-                    user.refresh_token = refreshToken;
-                    return done(null, user);
+                    if(refreshToken)
+                      user.refresh_token = refreshToken;
+                    user.save(function(err) {
+                      if (err)
+                        throw err;
+                      return done(null, user);
+                    });
                 } else {
                     var newUser = new User();
 
                     newUser.google_id    = profile.id;
                     newUser.access_token = accessToken;
-                    newUser.refresh_token = refreshToken;
+                    if(refreshToken)
+                      newUser.refresh_token = refreshToken;
                     newUser.name  = profile.displayName;
                     newUser.email = profile.emails[0].value; // pull the first email
 

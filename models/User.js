@@ -6,6 +6,7 @@ const User = mongoose.Schema({
   harvest_refresh_token: String,
   google_id: String,
   access_token: String,
+  refresh_token: String,
   name: String,
   email: String
 });

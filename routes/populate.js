@@ -11,7 +11,11 @@ router.get('/', function(req, res, next) {
       var calendar = google.calendar('v3');
       var auth = new googleAuth();
       var oauth2Client = new auth.OAuth2(configAuth.googleAuth.clientID, configAuth.googleAuth.clientSecret,configAuth.googleAuth.callbackURL);
-      oauth2Client.credentials = {accessToken: req.user.access_token, refreshToken: req.user.refresh_token};
+      oauth2Client.credentials = {
+        access_token: req.user.access_token,
+        refresh_token: req.user.refresh_token,
+        token_type: 'Bearer'
+      };
       calendar.events.list({
         auth: oauth2Client,
         calendarId: 'primary',
