@@ -22,6 +22,7 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var google = require("./routes/google")(passport);
 var harvest = require("./routes/harvest")(passport);
+var populate = require("./routes/populate");
 
 var app = express();
 
@@ -46,6 +47,7 @@ app.use('/', index);
 app.use('/users', users);
 app.use('/google', google);
 app.use('/harvest', harvest);
+app.use('/populate', populate);
 
 
 // catch 404 and forward to error handler
