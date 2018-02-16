@@ -1,3 +1,3 @@
 module.exports = {
-	url: 'mongodb://localhost:27017/gauth'
-}
+	url: process.env.DB_URL
+};

@@ -1,6 +1,6 @@
-var LocalStrategy   = require('passport-local').Strategy;
-var User            = require('../models/user');
+var User            = require('../models/User');
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+const OAuth2Strategy = require('passport-oauth2');
 var configAuth = require('../config/auth');
 
 
@@ -21,36 +21,31 @@ module.exports = function(passport) {
 
         clientID        : configAuth.googleAuth.clientID,
         clientSecret    : configAuth.googleAuth.clientSecret,
-        callbackURL     : configAuth.googleAuth.callbackURL,
+        callbackURL     : configAuth.googleAuth.callbackURL
 
     },
 
-    function(token, refreshToken, profile, done) {
+    function(accessToken, refreshToken, profile, done) {
 
-        // make the code asynchronous
-        // User.findOne won't fire until we have all our data back from Google
         process.nextTick(function() {
 
-            // try to find the user based on their google id
-            User.findOne({ 'google.id' : profile.id }, function(err, user) {
+            User.findOne({ 'google_id' : profile.id }, function(err, user) {
                 if (err)
                     return done(err);
 
                 if (user) {
-
-                    // if a user is found, log them in
+                    user.access_token = accessToken;
+                    user.refresh_token = refreshToken;
                     return done(null, user);
                 } else {
-                    // if the user isnt in our database, create a new user
-                    var newUser          = new User();
+                    var newUser = new User();
 
-                    // set all of the relevant information
-                    newUser.google.id    = profile.id;
-                    newUser.google.token = token;
-                    newUser.google.name  = profile.displayName;
-                    newUser.google.email = profile.emails[0].value; // pull the first email
+                    newUser.google_id    = profile.id;
+                    newUser.access_token = accessToken;
+                    newUser.refresh_token = refreshToken;
+                    newUser.name  = profile.displayName;
+                    newUser.email = profile.emails[0].value; // pull the first email
 
-                    // save the user
                     newUser.save(function(err) {
                         if (err)
                             throw err;
@@ -61,5 +56,49 @@ module.exports = function(passport) {
         });
 
     }));
+
+  passport.use(new OAuth2Strategy({
+      authorizationURL: configAuth.harvestAuth.authorizationURL,
+      tokenURL: configAuth.harvestAuth.tokenURL,
+      clientID: configAuth.harvestAuth.clientID,
+      clientSecret: configAuth.harvestAuth.clientSecret,
+      callbackURL: configAuth.harvestAuth.callbackURL,
+      passReqToCallback : true
+    },
+    function(req, accessToken, refreshToken, profile, done) {
+      process.nextTick(function() {
+
+        if(!req.user) {
+
+          User.findOne({'harvest_id': profile.id}, function (err, user) {
+            if (err)
+              return done(err);
+
+            if (user) {
+              user.harvest_access_token = accessToken;
+              user.harvest_refresh_token = refreshToken;
+              user.save(function(err) {
+                if (err)
+                  return done(err);
+                return done(null, user);
+              });
+            } else {
+              return done(err);
+            }
+          });
+        } else {
+          var user = req.user;
+          user.harvest_id = profile.id;
+          user.harvest_access_token = accessToken;
+          user.harvest_refresh_token = refreshToken;
+          user.save(function(err) {
+            if (err)
+              return done(err);
+            return done(null, user);
+          });
+        }
+      });
+    }
+  ));
 
 };
