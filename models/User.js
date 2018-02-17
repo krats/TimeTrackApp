@@ -8,7 +8,9 @@ const User = mongoose.Schema({
   access_token: String,
   refresh_token: String,
   name: String,
-  email: String
+  email: String,
+  harvest_account_id: String,
+  harvest_user_id: String
 });
 
 module.exports = mongoose.model('User', User);

@@ -77,7 +77,10 @@ module.exports = function(passport) {
     },
     function(req, accessToken, refreshToken, profile, done) {
       process.nextTick(function() {
-
+        var scope = req.query.scope;
+        var code = req.query.code;
+        var harvest_account_id = scope.split(":")[1];
+        var harvest_user_id = code.split(".")[0];
         if(!req.user) {
 
           User.findOne({'harvest_id': profile.id}, function (err, user) {
@@ -87,6 +90,8 @@ module.exports = function(passport) {
             if (user) {
               user.harvest_access_token = accessToken;
               user.harvest_refresh_token = refreshToken;
+              user.harvest_user_id = harvest_user_id;
+              user.harvest_account_id = harvest_account_id;
               user.save(function(err) {
                 if (err)
                   return done(err);
@@ -98,7 +103,8 @@ module.exports = function(passport) {
           });
         } else {
           var user = req.user;
-          user.harvest_id = profile.id;
+          user.harvest_account_id = harvest_account_id;
+          user.harvest_user_id = harvest_user_id;
           user.harvest_access_token = accessToken;
           user.harvest_refresh_token = refreshToken;
           user.save(function(err) {

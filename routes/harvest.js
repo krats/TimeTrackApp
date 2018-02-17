@@ -8,7 +8,6 @@ module.exports = function (passport) {
   router.get('/callback',
     passport.authenticate('oauth2', {failureRedirect: '/login'}),
     function (req, res) {
-      console.log(req);
       res.redirect('/');
     }
   );
