@@ -4,6 +4,8 @@ var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 var configAuth = require('../config/auth');
 
+var foo = require('./harvest.json');
+
 /* GET home page. */
 
 function getMonday(d) {
@@ -18,6 +20,7 @@ function getMonday(d) {
 function getTimeSheetDetailsForHarvest(events) {
 
   let harvest_details = [];
+  let project_assignments = foo.project_assignments;
   for (event of events) {
     let summary = event.summary;
     var event_details = summary.match(/^\[([ A-Za-z0-9_@./#&+-]+)\]:\[([ A-Za-z0-9_@./#&+-]+)\]:([ A-Za-z0-9_@./#&+-]+)/);
@@ -30,16 +33,36 @@ function getTimeSheetDetailsForHarvest(events) {
 
     harvest_event.duration = event_duration;
     if(event_details != null) {
-        console.log(event_details[1], event_details[2], event_details[3]);
         harvest_event.client = event_details[1];
         harvest_event.project = event_details[2];
         harvest_event.event_summary = event_details[3];
+        for(i in project_assignments) {
+          if(harvest_event.project.toLowerCase() == project_assignments[i].project.name.toLowerCase() 
+            && harvest_event.client.toLowerCase() == project_assignments[i].client.name.toLowerCase()) {
+              harvest_event.project_id = project_assignments[i].project.id;
+              harvest_event.client_id = project_assignments[i].client.id;
+              harvest_event.task_id = project_assignments[i].task_assignments[0].task.id;
+              break;
+          }
+        }
     }
     else {
       var event_details = summary.match(/^\[([ A-Za-z0-9_@./#&+-]+)\]:([ A-Za-z0-9_@./#&+-]+)/);
       if(event_details != null) {
         harvest_event.project = event_details[1];
         harvest_event.event_summary = event_details[3];
+        if("ooo" === event_details[1].toLowerCase()) {
+            harvest_event.duration = 8;
+        }
+        else {
+          for(i in project_assignments) {
+            if(harvest_event.project.toLowerCase() == project_assignments[i].client.name.toLowerCase()) {
+              harvest_event.client_id = project_assignments[i].client.id;
+              harvest_event.task_id = project_assignments[i].task_assignments[0].task.id;
+              break;
+            }
+          }
+        }
       }
       else {
         harvest_event.event_summary = summary;
@@ -65,13 +88,16 @@ router.get('/', function(req, res, next) {
         token_type: 'Bearer'
       };
       
-      minTime = getMonday(new Date());
-      
+      //minTime = getMonday(new Date());
+      current_date = new Date();
+      minTime = new Date(current_date.setHours(0, 0, 0, 0)).toISOString();
+      maxTime = new Date(current_date.setHours(23, 59, 59, 999)).toISOString();
+
       calendar.events.list({
         auth: oauth2Client,
         calendarId: 'primary',
         timeMin: minTime,
-        timeMax: (new Date()).toISOString(),
+        timeMax: maxTime,
         maxResults: 10,
         singleEvents: true,
         orderBy: 'startTime'
