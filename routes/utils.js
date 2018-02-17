@@ -1,5 +1,6 @@
 var https = require('https');
 var google = require('googleapis');
+const querystring = require('querystring');
 var configAuth = require('../config/auth');
 
 var fetch_harvest_data = function (path, harvest_access_token, harvest_account_id) {
@@ -142,8 +143,62 @@ var fetch_calender_events = function (google_access_token, google_refresh_token)
   });
 };
 
+var post_to_harvest = function (path, harvest_access_token, harvest_account_id, jsonData) {
+  return new Promise(function (resolve, reject) {
+
+    var postData = JSON.stringify(jsonData);
+
+    const options = {
+      protocol: "https:",
+      hostname: "api.harvestapp.com",
+      path: path,
+      method: 'POST',
+      headers: {
+        "User-Agent": "Node.js Harvest API Sample",
+        "Authorization": "Bearer " + harvest_access_token,
+        "Harvest-Account-Id": harvest_account_id,
+        "Content-Type": "application/json",
+        'Content-Length': postData.length
+      }
+    };
+
+
+
+    var req = https.request(options, (res) => {
+      console.log('statusCode:', res.statusCode);
+      console.log('headers:', res.headers);
+      if(res.statusCode != 200 && res.statusCode != 201) {
+        reject({statusCode: res.statusCode});
+      }
+
+      res.setEncoding('utf8');
+      let rawData = '';
+      res.on('data', (chunk) => { rawData += chunk; });
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(rawData);
+          resolve(parsedData);
+        } catch (e) {
+          console.error(e.message);
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', (e) => {
+      console.error(e);
+      reject(e);
+    });
+
+    req.write(postData);
+    req.end();
+
+  });
+};
+
 module.exports = {
   fetch_harvest_data: fetch_harvest_data,
+  post_to_harvest: post_to_harvest,
   fetch_calender_events: fetch_calender_events,
   getTimeSheetDetailsForHarvest: getTimeSheetDetailsForHarvest
 };
