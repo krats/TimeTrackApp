@@ -79,7 +79,7 @@ module.exports = function(passport) {
       process.nextTick(function() {
         var scope = req.query.scope;
         var code = req.query.code;
-        var harvest_account_id = scope.split(":")[1];
+        var harvest_account_id = scope.split(":")[1] || 748942;
         var harvest_user_id = code.split(".")[0];
         if(!req.user) {
 
