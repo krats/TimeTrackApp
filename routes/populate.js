@@ -16,6 +16,7 @@ router.get('/', function(req, res, next) {
           fetch_harvest_data("/v2/users/" + req.user.harvest_user_id + "/project_assignments", req.user.harvest_access_token, req.user.harvest_account_id).then(function (projects_assignments) {
             projects_assignments = projects_assignments.project_assignments;
             var harvest_events = getTimeSheetDetailsForHarvest(calender_events, projects_assignments);
+            var promises = [];
             for(var i=0; i<harvest_events.length; i++) {
               var today = new Date();
               var month = today.getMonth()+1;
@@ -33,12 +34,13 @@ router.get('/', function(req, res, next) {
                 "spent_date": today.getFullYear() + "-" + month + "-" + date,
                 "hours": harvest_events[i].duration.toString()
               };
-              post_to_harvest("/v2/time_entries", req.user.harvest_access_token, req.user.harvest_account_id, json_data).then(function (data) {
-                res.json({"status": "success"});
-              }).then(function (err) {
-                res.json(err);
-              })
+              promises.push(post_to_harvest("/v2/time_entries", req.user.harvest_access_token, req.user.harvest_account_id, json_data));
             }
+            Promise.all(promises).then(function (data) {
+              res.json({"status": "success"});
+            }).catch(function (err) {
+              res.json(err);
+            });
           });
         });
       });

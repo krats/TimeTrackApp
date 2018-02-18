@@ -133,7 +133,6 @@ var fetch_calender_events = function (google_access_token, google_refresh_token)
       orderBy: 'startTime'
     }, function(err, response) {
       if (err) {
-        console.log('The API returned an error: ' + err);
         reject(err);
         return;
       }
@@ -165,8 +164,6 @@ var post_to_harvest = function (path, harvest_access_token, harvest_account_id, 
 
 
     var req = https.request(options, (res) => {
-      console.log('statusCode:', res.statusCode);
-      console.log('headers:', res.headers);
       if(res.statusCode != 200 && res.statusCode != 201) {
         reject({statusCode: res.statusCode});
       }
